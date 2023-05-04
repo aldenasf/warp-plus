@@ -5,11 +5,9 @@ import json
 import random
 import string
 import requests
+from keepalive import keepalive
 from datetime import datetime
 from dotenv import load_dotenv
-from keepalive import keepalive
-from colorist import Color as Color
-from colorist import BgColor as BColor
 
 # env  : Loads referrer from .env with the property name REFERRER (default)
 # json : Loads referrer from json with the property name Referrer
@@ -33,8 +31,9 @@ elif REFERRER_TYPE == 'json':
     config = json.load(open('config.json'))
     referrer = config['referrer']
 else:
-    print(f"{BColor.RED} ERROR {BColor.OFF} Invalid referrer type. Possible values are 'env' and 'json'")
+    print("[ERROR] Invalid referrer type. Possible values are 'env' and 'json'")
     exit(1)
+
 show_referrer = False
 url = f'https://api.cloudflareclient.com/v0a{generate_int(3)}/reg'
 tracker = {}
@@ -92,17 +91,13 @@ def print_tracker(status_code: int):
         print(tracker_code(status_code, "retrying..."))
 
     print(
-        f"total    :{Color.GREEN} {str(tracker['good']):>5} good {Color.OFF}|{Color.RED} {tracker['bad']:>5} bad {Color.OFF}|{Color.CYAN} {tracker['good'] + tracker['bad']:>5} total {Color.OFF}")
+        f"total    : {str(tracker['good']):>5} good | {tracker['bad']:>5} bad | {tracker['good'] + tracker['bad']:>5} total ")
     print(
-        f"session  :{Color.GREEN} {session_tracker['good']:>5} good {Color.OFF}|{Color.RED} {session_tracker['bad']:>5} bad {Color.OFF}|{Color.CYAN} {session_tracker['good'] + session_tracker['bad']:>5} total {Color.OFF}")
+        f"session  : {session_tracker['good']:>5} good | {session_tracker['bad']:>5} bad | {session_tracker['good'] + session_tracker['bad']:>5} total ")
 
 
 def tracker_code(status_code, message):
-    if status_code == 200:
-        color = Color.GREEN
-    else:
-        color = Color.RED
-    return f"code     :{color} {str(status_code):>10} {Color.OFF}|{color} {message}{Color.OFF}"
+    return f"code     : {str(status_code):>10} | {message}"
 
 
 def countdown_sleep(seconds: int):
@@ -153,7 +148,7 @@ def run():
 if __name__ == '__main__':
     keepalive()
     if referrer == None or len(referrer) == 0:
-        print(f"{BColor.RED} ERROR {BColor.OFF} Property 'referrer' is empty or None. Please create a .env file and define REFERRER")
+        print("[ERROR] Property 'referrer' is empty or None. Please create a .env file and define REFERRER")
         exit(1)
     sync_tracker()
     while True:
@@ -162,16 +157,17 @@ if __name__ == '__main__':
         if show_referrer:
             print(f"referrer : {referrer}")
 
-        print_tracker(result)
-
         if result == 200:
             increment_good()
+            print_tracker(result)
             countdown_sleep(18)
         elif result == 429:
             increment_bad()
+            print_tracker(result)
             countdown_sleep(18)
         else:
             increment_bad()
+            print_tracker(result)
             countdown_sleep(1)
 
         clear_terminal()

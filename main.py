@@ -1,17 +1,18 @@
 import os
 import sys
-import time
+import yaml
 import json
+import time
 import random
 import string
 import requests
-from keepalive import keepalive
 from datetime import datetime
 from dotenv import load_dotenv
+from keepalive import keepalive
+from colorama import init, Fore as Color, Back as BColor, Style
 
-# env  : Loads referrer from .env with the property name REFERRER (default)
-# json : Loads referrer from json with the property name Referrer
-REFERRER_TYPE = 'env'
+init(convert=True)
+config = yaml.safe_load(open('config.yml'))
 
 
 def generate_str(length: int):
@@ -24,42 +25,46 @@ def generate_int(length: int):
     return ''.join((random.choice(digit) for i in range(length)))
 
 
-if REFERRER_TYPE == 'env':
+if config['referrer-type'] == 'env':
     load_dotenv()
     referrer = os.environ.get("REFERRER")
-elif REFERRER_TYPE == 'json':
-    config = json.load(open('config.json'))
+elif config['referrer-type'] == 'yml':
     referrer = config['referrer']
 else:
-    print("[ERROR] Invalid referrer type. Possible values are 'env' and 'json'")
+    print(
+        f"{BColor.RED} ERROR {BColor.RESET} Invalid referrer type. Possible values are 'env' and 'yml'\nSpecified value: {config['referrer']}")
     exit(1)
 
-show_referrer = False
 url = f'https://api.cloudflareclient.com/v0a{generate_int(3)}/reg'
 tracker = {}
 session_tracker = {}
 
 
 def increment_good():
-    r = json.load(open('tracker.json'))
-
-    r['good'] += 1
     session_tracker['good'] += 1
-    tracker['good'] = r['good']
 
-    with open('tracker.json', 'w') as w:
-        json.dump(r, w)
+    if config['tracker-save']:
+        r = json.load(open('tracker.json'))
+        r['good'] += 1
+        tracker['good'] = r['good']
+        with open('tracker.json', 'w') as w:
+            json.dump(r, w)
 
 
 def increment_bad():
-    r = json.load(open('tracker.json'))
-
-    r['bad'] += 1
     session_tracker['bad'] += 1
-    tracker['bad'] = r['bad']
 
-    with open('tracker.json', 'w') as w:
-        json.dump(r, w)
+    if config['tracker-save']:
+        r = json.load(open('tracker.json'))
+        r['bad'] += 1
+        tracker['bad'] = r['bad']
+        with open('tracker.json', 'w') as w:
+            json.dump(r, w)
+
+
+def setup_tracker():
+    session_tracker['good'] = 0
+    session_tracker['bad'] = 0
 
 
 def sync_tracker():
@@ -74,8 +79,6 @@ def sync_tracker():
 
         tracker['good'] = r['good']
         tracker['bad'] = r['bad']
-        session_tracker['good'] = 0
-        session_tracker['bad'] = 0
     except json.decoder.JSONDecodeError:
         with open('tracker.json', 'w') as w:
             json.dump({"good": 0, "bad": 0}, w)
@@ -90,14 +93,21 @@ def print_tracker(status_code: int):
     else:
         print(tracker_code(status_code, "retrying..."))
 
+    if config['tracker-save']:
+        print(
+            f"total    :{Color.GREEN + Style.BRIGHT} {str(tracker['good']):>5} good {Color.RESET}|{Color.RED} {tracker['bad']:>5} bad {Color.RESET}|{Color.CYAN} {tracker['good'] + tracker['bad']:>5} total {Style.RESET_ALL}")
+
     print(
-        f"total    : {str(tracker['good']):>5} good | {tracker['bad']:>5} bad | {tracker['good'] + tracker['bad']:>5} total ")
-    print(
-        f"session  : {session_tracker['good']:>5} good | {session_tracker['bad']:>5} bad | {session_tracker['good'] + session_tracker['bad']:>5} total ")
+        f"session  :{Color.GREEN + Style.BRIGHT} {session_tracker['good']:>5} good {Color.RESET}|{Color.RED} {session_tracker['bad']:>5} bad {Color.RESET}|{Color.CYAN} {session_tracker['good'] + session_tracker['bad']:>5} total {Style.RESET_ALL}")
 
 
 def tracker_code(status_code, message):
-    return f"code     : {str(status_code):>10} | {message}"
+    if status_code == 200:
+        color = Color.GREEN + Style.BRIGHT
+    else:
+        color = Color.RED + Style.BRIGHT
+
+    return f"code     :{Style.BRIGHT + color} {str(status_code):>10} {Color.RESET}|{color} {message}{Style.RESET_ALL}"
 
 
 def countdown_sleep(seconds: int):
@@ -112,6 +122,9 @@ def clear_terminal():
 
 
 def run():
+    time.sleep(0.5)
+    return 200
+
     try:
         install_id = generate_str(22)
         body = {
@@ -146,28 +159,35 @@ def run():
 
 
 if __name__ == '__main__':
-    keepalive()
+    if config['keep-alive-enabled']:
+        keepalive()
+
     if referrer == None or len(referrer) == 0:
-        print("[ERROR] Property 'referrer' is empty or None. Please create a .env file and define REFERRER")
+        print(f"{BColor.RED + Style.BRIGHT} ERROR {Style.RESET_ALL} Property 'referrer' is empty or None. Please set the referrer in config.yml or enviroment variable")
         exit(1)
-    sync_tracker()
+
+    if config['tracker-save']:
+        sync_tracker()
+
+    setup_tracker()
+
     while True:
         result = run()
 
-        if show_referrer:
+        if config['show-referrer']:
             print(f"referrer : {referrer}")
 
         if result == 200:
             increment_good()
             print_tracker(result)
-            countdown_sleep(18)
+            countdown_sleep(config['good-response-wait'])
         elif result == 429:
             increment_bad()
             print_tracker(result)
-            countdown_sleep(18)
+            countdown_sleep(config['rate-limit-response-wait'])
         else:
             increment_bad()
             print_tracker(result)
-            countdown_sleep(1)
+            countdown_sleep(config['bad-response-wait'])
 
         clear_terminal()

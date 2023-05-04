@@ -1,0 +1,40 @@
+# Where to get the referrer from
+# env - Gets the value from the enviroment variable (or .env) with the property name 'REFERRER'
+# yml - Gets the value from the current file with the property name 'REFERRER' (Default)
+referrer-type: "env"
+
+# Wether to show the referrer when displaying the tracker (good, bad, total)
+show-referrer: false
+
+# Use if REFERRER_TYPE is set to yml
+referrer: ""
+
+# The amount of time to wait after getting a "good" response in seconds
+good-response-wait: 18
+
+# The amount of time to wait after getting a rate limited response in seconds
+rate-limit-response-wait: 18
+
+# The amount of time to wait after getting a "bad" response (excluding rate limit) in seconds
+bad-response-wait: 1
+
+# Wether to track and save the progress as 'total' and be continued in the next session
+tracker-save: true
+
+###################################################################################################
+###   Keep alive: If you are running this locally, you can leave these to their default value   ###
+###################################################################################################
+
+# Enable keep alive?
+keep-alive-enabled: false
+
+# Port to host the flask server on
+flask-server-port: 3000
+
+# Enables the '/tracker' route that would return the content of tracker.json
+keep-alive-tracker: false
+
+# Possible values: 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
+flask-log-level: "WARNING"
+
+hide-flask-development-server-warn: true
