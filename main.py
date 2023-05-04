@@ -157,16 +157,17 @@ if __name__ == '__main__':
         if show_referrer:
             print(f"referrer : {referrer}")
 
-        print_tracker(result)
-
         if result == 200:
             increment_good()
+            print_tracker(result)
             countdown_sleep(18)
         elif result == 429:
             increment_bad()
+            print_tracker(result)
             countdown_sleep(18)
         else:
             increment_bad()
+            print_tracker(result)
             countdown_sleep(1)
 
         clear_terminal()
