@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import os
 import sys
 import time
@@ -6,7 +5,9 @@ import json
 import random
 import string
 import requests
+from keepalive import keepalive
 from datetime import datetime
+from dotenv import load_dotenv
 
 # env  : Loads referrer from .env with the property name REFERRER (default)
 # json : Loads referrer from json with the property name Referrer
@@ -145,6 +146,7 @@ def run():
 
 
 if __name__ == '__main__':
+    keepalive()
     if referrer == None or len(referrer) == 0:
         print("[ERROR] Property 'referrer' is empty or None. Please create a .env file and define REFERRER")
         exit(1)

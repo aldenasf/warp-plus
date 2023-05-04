@@ -7,6 +7,7 @@ import string
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
+from keepalive import keepalive
 from colorist import Color as Color
 from colorist import BgColor as BColor
 
@@ -150,6 +151,7 @@ def run():
 
 
 if __name__ == '__main__':
+    keepalive()
     if referrer == None or len(referrer) == 0:
         print(f"{BColor.RED} ERROR {BColor.OFF} Property 'referrer' is empty or None. Please create a .env file and define REFERRER")
         exit(1)
