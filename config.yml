@@ -18,9 +18,6 @@ rate-limit-response-wait: 18
 # The amount of time to wait after getting a "bad" response (excluding rate limit) in seconds
 bad-response-wait: 1
 
-# Wether to track and save the progress as 'total' and be continued in the next session
-tracker-save: true
-
 ###################################################################################################
 ###   Keep alive: If you are running this locally, you can leave these to their default value   ###
 ###################################################################################################
